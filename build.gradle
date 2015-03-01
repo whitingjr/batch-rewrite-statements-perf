@@ -1,0 +1,14 @@
+plugins {
+   id 'me.champeau.gradle.jmh' version '0.2.0'
+}
+
+apply plugin: 'me.champeau.gradle.jmh'
+apply plugin: 'java'
+
+dependencies {
+   jmh 'commons-io:commons-dbutils:1.6'
+}
+jmh {
+   jmhVersion = '1.6.1'
+}
+
