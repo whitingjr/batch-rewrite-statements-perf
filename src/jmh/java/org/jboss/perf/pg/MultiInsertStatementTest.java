@@ -4,12 +4,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.dbutils.DbUtils;
 import org.jboss.perf.BatchSQLEnum;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
@@ -20,38 +23,36 @@ import org.openjdk.jmh.annotations.TearDown;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
+@Measurement(iterations=100, timeUnit=TimeUnit.MINUTES)
 public class MultiInsertStatementTest extends BaseBench {
+   
+   @Benchmark
+   public void do1MultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState ) throws SQLException
+   {  
+      executeAsBatch(state, benchmarkState.SMALL);
+   }
+   
+//   @Benchmark
+//   public void do11MultirowInserts( ThreadState state )
+//   {
+//   }
+//   
+//   @Benchmark
+//   public void do51MultirowInserts( ThreadState state )
+//   {
+//   }
 
-   
-   @Benchmark
-   public void do1MultirowInserts( ThreadState state )
-   {
-   }
-   
-   @Benchmark
-   public void do11MultirowInserts()
-   {
-   }
-   
-   @Benchmark
-   public void do51MultirowInserts()
-   {
-   }
-
-   @State (Scope.Thread)
-   public static class ThreadState
+   /** 
+    * Benchmark state that is set up once beforehand.
+    * @author whitingjr
+    */
+   @State (Scope.Benchmark)
+   public static class MultiRowBenchmarkState
    {
       BatchSQLEnum SMALL = BatchSQLEnum.SMALL;
       BatchSQLEnum MEDIUM = BatchSQLEnum.MEDIUM;
       BatchSQLEnum LARGE = BatchSQLEnum.LARGE;
-      Connection conn;
-      private volatile long iteration = 0L;
       
-      @Setup (Level.Iteration)
-      public void setUp() throws SQLException
-      {
-         this.conn = ds.getConnection(); 
-      }
       @Setup (Level.Trial)
       public void setUpSQL() 
       {
@@ -62,12 +63,21 @@ public class MultiInsertStatementTest extends BaseBench {
          buildSQL(SMALL);
          buildSQL(MEDIUM);
          buildSQL(LARGE);
-      }
-      
-      @TearDown (Level.Iteration)
-      public void tearDown() throws SQLException
-      {
-         this.conn.close();
+         Connection c = null;
+         Statement s = null;
+         try 
+         {
+            c = ds.getConnection();
+            s = c.createStatement();
+            s.execute("drop table orderline if exists");
+            s.close();
+            s = c.createStatement();
+            s.execute("create table orderline ( orderLineId bigint not null, description varchar (20) );");
+            
+         } catch ( SQLException sqle ) {
+            DbUtils.closeQuietly( s );  
+            DbUtils.closeQuietly( c );  
+         }
       }
       protected String buildSQL(BatchSQLEnum sql) 
       {
@@ -86,13 +96,35 @@ public class MultiInsertStatementTest extends BaseBench {
       private long getSize(String key)
       {
          return Long.parseLong(System.getProperty(key));
+      }      
+   }
+   
+   /**
+    * Benchmark state per thread.
+    * @author whitingjr
+    */
+   @State (Scope.Thread)
+   public static class ThreadState
+   {
+      Connection conn;
+      volatile int iteration = 0;
+      
+      @Setup (Level.Iteration)
+      public void setUp() throws SQLException
+      {
+         this.conn = ds.getConnection(); 
+      }
+      @TearDown (Level.Iteration)
+      public void tearDown() throws SQLException
+      {
+         this.conn.close();
       }
    }
    
-   private PreparedStatement bindValues( PreparedStatement ps, BatchSQLEnum sql, long iterationCount ) throws SQLException
+   private PreparedStatement bindValues( PreparedStatement ps, BatchSQLEnum sql, ThreadState state ) throws SQLException
    {
       long count = sql.getCount();
-      long initialId = iterationCount * sql.getCount(); 
+      long initialId = state.iteration * sql.getCount(); 
       int pos = 1;
       for (long c = 1l; c < count ; c += 1l  )
       {
@@ -104,11 +136,30 @@ public class MultiInsertStatementTest extends BaseBench {
       return ps;
    }
    
-   private int executeAsBatch(ThreadState state, BatchSQLEnum sql, long iterCount) throws SQLException
+   /**
+    * Execute the sql batch with the multi row insert. 
+    * @param state
+    * @param sql enum for the batch size
+    * @return the total number of rows inserted
+    * @throws SQLException
+    */
+   private int executeAsBatch(ThreadState state, BatchSQLEnum sql) throws SQLException
    {
-      PreparedStatement ps = state.conn.prepareStatement(sql.getSQL());
-      bindValues(ps, sql, iterCount);
-      int uc[] = ps.executeBatch();
-      
+      PreparedStatement ps = null;
+      int rv = 0;
+      try 
+      {
+         ps = state.conn.prepareStatement(sql.getSQL());
+         bindValues(ps, sql, state);
+         int uc[] = ps.executeBatch();
+         for (int c: uc)
+         {
+            rv += c;
+         }
+      }
+      finally {
+         if (null != ps) { ps.close(); }
+      }
+      return rv;
    }
 }

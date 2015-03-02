@@ -5,10 +5,18 @@ plugins {
 apply plugin: 'me.champeau.gradle.jmh'
 apply plugin: 'java'
 
+repositories {
+   mavenCentral()
+   mavenLocal()
+}
+
 dependencies {
-   jmh 'commons-io:commons-dbutils:1.6'
+   jmh 'commons-dbutils:commons-dbutils:1.6'
+   jmh 'org.apache.tomcat:tomcat-jdbc:8.0.20'
 }
 jmh {
    jmhVersion = '1.6.1'
+   fork=1
+   threads=1
 }
 

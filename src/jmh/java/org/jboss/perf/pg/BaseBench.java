@@ -7,13 +7,20 @@ import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
 
 import org.apache.tomcat.jdbc.pool.PoolProperties;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
+@State (Scope.Benchmark)
 public class BaseBench {
 
    protected static final int MIN_POOL_SIZE = 1;
    
    protected static volatile DataSource ds;
    
+   @Setup
    public void createPool()
    {
       try {
@@ -43,12 +50,11 @@ public class BaseBench {
       }
    }
    
-   
-//   Statement s = connection.createStatement();
-//   s.execute("drop table orderline if exists");
-//   s.close();
-//   connection.createStatement();
-//   s.execute("create table orderline ( orderLineId bigint not null, description varchar (20) );");
+   @TearDown
+   public void tearDown()
+   {
+      ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
+   }
 
    
 }
