@@ -13,14 +13,12 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
-@State (Scope.Benchmark)
 public class BaseBench {
 
    protected static final int MIN_POOL_SIZE = 1;
    
    protected static volatile DataSource ds;
    
-   @Setup
    public void createPool()
    {
       try {
@@ -50,7 +48,6 @@ public class BaseBench {
       }
    }
    
-   @TearDown
    public void tearDown()
    {
       ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();

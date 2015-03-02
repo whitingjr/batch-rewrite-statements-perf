@@ -162,4 +162,15 @@ public class MultiInsertStatementTest extends BaseBench {
       }
       return rv;
    }
+   
+   @Setup
+   public void setUp()
+   {
+      super.createPool();
+   }
+   @TearDown
+   public void tearDown()
+   {
+      super.tearDown();
+   }
 }
