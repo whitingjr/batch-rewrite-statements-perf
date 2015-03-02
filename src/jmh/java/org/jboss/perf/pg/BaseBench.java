@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
-
 public class BaseBench {
 
    protected static final int MIN_POOL_SIZE = 1;
@@ -51,4 +50,5 @@ public class BaseBench {
 //   connection.createStatement();
 //   s.execute("create table orderline ( orderLineId bigint not null, description varchar (20) );");
 
+   
 }
