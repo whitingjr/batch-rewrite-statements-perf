@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.dbutils.DbUtils;
@@ -109,12 +108,12 @@ public class MultiInsertStatementTest extends BaseBench {
       Connection conn;
       volatile int iteration = 0;
       
-      @Setup (Level.Iteration)
+      @Setup (Level.Invocation)
       public void setUp() throws SQLException
       {
          this.conn = ds.getConnection(); 
       }
-      @TearDown (Level.Iteration)
+      @TearDown (Level.Invocation)
       public void tearDown() throws SQLException
       {
          this.conn.close();

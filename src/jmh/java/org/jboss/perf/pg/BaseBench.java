@@ -1,5 +1,7 @@
 package org.jboss.perf.pg;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +14,8 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+
+import com.sun.xml.internal.fastinfoset.sax.Properties;
 
 public class BaseBench {
 
@@ -53,5 +57,10 @@ public class BaseBench {
       ((org.apache.tomcat.jdbc.pool.DataSource) ds).close();
    }
 
-   
+   public void loadProperties()
+   {
+      Properties props = new Properties();
+      props.load( new BufferedInputStream(  ClassLoader.getSystemResourceAsStream("bench.properties") ) );
+      
+   }
 }
