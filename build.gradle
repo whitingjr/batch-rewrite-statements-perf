@@ -13,10 +13,24 @@ repositories {
 dependencies {
    jmh 'commons-dbutils:commons-dbutils:1.6'
    jmh 'org.apache.tomcat:tomcat-jdbc:8.0.20'
+   jmh 'org.postgresql:postgresql:9.4-1201-jdbc41'
 }
+
 jmh {
    jmhVersion = '1.6.1'
    fork=1
    threads=1
+   jvmArgsAppend = " "
+//   jvmArgsAppend += "-Xrunjdwp:transport=dt_socket,address=burtha-f20:8000,server=y,suspend=y"
+   if (project.hasProperty('host')) { jvmArgsAppend += " -Dhost=${property('host')}"; }
+   if (project.hasProperty('port')) { jvmArgsAppend += " -Dport=${property('port')}"; }
+   if (project.hasProperty('database')) { jvmArgsAppend += " -Ddatabase=${property('database')}"; }
+   if (project.hasProperty('user')) { jvmArgsAppend += " -Duser=${property('user')}"; }
+   if (project.hasProperty('password')) { jvmArgsAppend += " -Dpassword=${property('password')}"; }
+   
+   if (project.hasProperty('maxPoolSize')) { jvmArgsAppend += " -DmaxPoolSize=${property('maxPoolSize')}"; }
+   
+   if (project.hasProperty('small.batch.size')) { jvmArgsAppend += " -Dsmall.batch.size=${property('small.batch.size')}"; }
+   if (project.hasProperty('medium.batch.size')) { jvmArgsAppend += " -Dmedium.batch.size=${property('medium.batch.size')}";}
+   if (project.hasProperty('large.batch.size')) { jvmArgsAppend += " -Dlarge.batch.size=${property('large.batch.size')}";}
 }
-
