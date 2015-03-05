@@ -21,12 +21,12 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 
 @BenchmarkMode(Mode.Throughput)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
 public class MultiInsertStatementTest extends BaseBench {
    
    @Benchmark
-   @Measurement(iterations=100, timeUnit=TimeUnit.MINUTES)
+   @Measurement(iterations=100)
    public void do1MultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
    {  
       try {
