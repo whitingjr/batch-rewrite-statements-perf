@@ -3,14 +3,20 @@ package org.jboss.perf.pg;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.dbutils.DbUtils;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
+import org.jboss.perf.BatchSQLEnum;
 
 public class BaseBench {
 
@@ -69,5 +75,72 @@ public class BaseBench {
       }
       props.putAll(System.getProperties()); //overwrite
       System.getProperties().putAll(props);
+   }
+   
+   /**
+    * Base class for state that is associated with the Thread.
+    * @author whitingjr
+    *
+    */
+   static class BaseThreadState
+   {
+      volatile Connection conn;
+
+      public void setUp() throws SQLException
+      {
+         this.conn = ds.getConnection();
+         this.conn.setAutoCommit(false);
+      }
+      public void tearDown() throws SQLException
+      {
+         this.conn.close();
+      }
+   }
+   
+   static abstract class BaseBenchmarkState
+   {
+      BatchSQLEnum SMALL = BatchSQLEnum.SMALL;
+      BatchSQLEnum MEDIUM = BatchSQLEnum.MEDIUM;
+      BatchSQLEnum LARGE = BatchSQLEnum.LARGE;
+      AtomicInteger iteration = new AtomicInteger();
+      
+      public void setUpSQL() 
+      {
+         SMALL.setCount(getSize("small.batch.size"));
+         MEDIUM.setCount(getSize("medium.batch.size"));
+         LARGE.setCount(getSize("large.batch.size"));
+         
+         SMALL.setSQL( buildSQL(SMALL) );
+         MEDIUM.setSQL( buildSQL(MEDIUM) );
+         LARGE.setSQL( buildSQL(LARGE) );
+         Connection c = null;
+         Statement s = null;
+         try 
+         {
+            c = ds.getConnection();
+            c.setAutoCommit(false);
+            s = c.createStatement();
+            s.execute("DROP TABLE IF EXISTS orderline;");
+            DbUtils.closeQuietly( s );
+            s = c.createStatement();
+            s.execute("CREATE TABLE orderline ( orderLineId bigint NOT NULL, description VARCHAR (20), PRIMARY KEY (orderLineId) );");
+            c.commit();
+         } catch ( SQLException sqle ) 
+         {
+            logger.log(java.util.logging.Level.SEVERE, sqle.getMessage());
+         }
+         finally 
+         {
+            DbUtils.closeQuietly( s );
+            DbUtils.closeQuietly( c );
+         }
+      }
+      /* Delegate the building of the sql to the concrete impl. */
+      abstract protected String buildSQL(BatchSQLEnum sql);
+
+      private long getSize(String key)
+      {
+         return Long.parseLong(System.getProperty(key));
+      }
    }
 }
