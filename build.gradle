@@ -20,6 +20,7 @@ jmh {
    jmhVersion = '1.6.1'
    fork=1
    threads=1
+   if (project.hasProperty('threads')) { threads=Integer.parseInt(property('threads')).intValue(); }
    jvmArgsAppend = " "
 //   jvmArgsAppend += "-Xrunjdwp:transport=dt_socket,address=burtha-f20:8000,server=y,suspend=y"
    if (project.hasProperty('host')) { jvmArgsAppend += " -Dhost=${property('host')}"; }

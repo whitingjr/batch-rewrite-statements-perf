@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import org.apache.commons.dbutils.DbUtils;
@@ -25,15 +26,19 @@ import org.openjdk.jmh.annotations.TearDown;
 @State(Scope.Benchmark)
 public class MultiInsertStatementTest extends BaseBench {
    
+   private static Logger logger = Logger.getLogger(MultiInsertStatementTest.class.getName());
    @Benchmark
    @Measurement(iterations=100)
    public void doSMALLMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
+      throws SQLException
    {  
       try {
-         executeAsBatch(state, benchmarkState.SMALL);
+         int i = benchmarkState.iteration.getAndIncrement();
+         executeAsBatch(state, benchmarkState.SMALL, i);
       } catch (SQLException sqle )
       {
-         throw new RuntimeException(sqle.getMessage() + " cause :" + sqle.getCause().getMessage());
+         logger.log(java.util.logging.Level.SEVERE, sqle.getMessage());
+         throw new RuntimeException(sqle.getMessage() );
       }
    }
    
@@ -41,10 +46,12 @@ public class MultiInsertStatementTest extends BaseBench {
    public void doMEDIUMMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState  )
    {
       try {
-         executeAsBatch(state, benchmarkState.MEDIUM);
+         int i = benchmarkState.iteration.getAndIncrement();
+         executeAsBatch(state, benchmarkState.MEDIUM, i);
       } catch (SQLException sqle )
       {
-         throw new RuntimeException(sqle.getMessage() + " cause :" + sqle.getCause().getMessage());
+         logger.log(java.util.logging.Level.SEVERE, sqle.getMessage());
+         throw new RuntimeException(sqle.getMessage() );
       }
    }
    
@@ -52,10 +59,12 @@ public class MultiInsertStatementTest extends BaseBench {
    public void doLARGEMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
    {
       try {
-         executeAsBatch(state, benchmarkState.LARGE);
+         int i = benchmarkState.iteration.getAndIncrement();
+         executeAsBatch(state, benchmarkState.LARGE, i);
       } catch (SQLException sqle )
       {
-         throw new RuntimeException(sqle.getMessage() + " cause :" + sqle.getCause().getMessage());
+         logger.log(java.util.logging.Level.SEVERE, sqle.getMessage());
+         throw new RuntimeException(sqle.getMessage() );
       }
    }
 
@@ -70,6 +79,7 @@ public class MultiInsertStatementTest extends BaseBench {
       BatchSQLEnum MEDIUM = BatchSQLEnum.MEDIUM;
       BatchSQLEnum LARGE = BatchSQLEnum.LARGE;
       private static Logger logger = Logger.getLogger(MultiRowBenchmarkState.class.getName());
+      AtomicInteger iteration = new AtomicInteger();
       
       @Setup (Level.Trial)
       public void setUpSQL() 
@@ -130,8 +140,7 @@ public class MultiInsertStatementTest extends BaseBench {
    @State (Scope.Thread)
    public static class ThreadState
    {
-      Connection conn;
-      volatile int iteration = 0;
+      volatile Connection conn;
 
       @Setup (Level.Invocation)
       public void setUp() throws SQLException
@@ -143,22 +152,23 @@ public class MultiInsertStatementTest extends BaseBench {
       public void tearDown() throws SQLException
       {
          this.conn.close();
-         iteration += 1;
       }
    }
    
    /**
     * Bind the values to each position in the statement.
+    * Increment the range of identifiers for this iteration. Increment it using
+    * the largest sized range. This will avoid duplicate key errors. 
     * @param ps
     * @param sql
     * @param state
     * @return
     * @throws SQLException
     */
-   private PreparedStatement bindValues( PreparedStatement ps, BatchSQLEnum sql, ThreadState state ) throws SQLException
+   private PreparedStatement bindValues( PreparedStatement ps, BatchSQLEnum sql, ThreadState state, int iteration ) throws SQLException
    {
       long count = sql.getCount();
-      long initialId = state.iteration * sql.getCount(); 
+      long initialId = iteration * sql.LARGE.getCount(); 
       int pos = 1;
       for (long c = 0l; c < count ; c += 1l  )
       {
@@ -172,19 +182,20 @@ public class MultiInsertStatementTest extends BaseBench {
    
    /**
     * Execute the sql in a batch with the multi row insert. In this situation there is only one statement in the batch.
+    * Am inclined to leave the batch as typical orm use case will bundle the statement in a batch with other statements. 
     * @param state
     * @param sql enum for the batch size
     * @return the total number of rows inserted
     * @throws SQLException
     */
-   private int executeAsBatch(ThreadState state, BatchSQLEnum sql) throws SQLException
+   private int executeAsBatch(ThreadState state, BatchSQLEnum sql, int iteration) throws SQLException
    {
       PreparedStatement ps = null;
       int rv = 0;
       try 
       {
          ps = state.conn.prepareStatement(sql.getSQL());
-         bindValues(ps, sql, state);
+         bindValues(ps, sql, state, iteration);
          ps.addBatch();
          int uc[] = ps.executeBatch();
          state.conn.commit();
