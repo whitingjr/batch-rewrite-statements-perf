@@ -27,7 +27,7 @@ public class MultiInsertStatementTest extends BaseBench {
    
    @Benchmark
    @Measurement(iterations=100)
-   public void do1MultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
+   public void doSMALLMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
    {  
       try {
          executeAsBatch(state, benchmarkState.SMALL);
@@ -38,7 +38,7 @@ public class MultiInsertStatementTest extends BaseBench {
    }
    
    @Benchmark
-   public void do11MultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState  )
+   public void doMEDIUMMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState  )
    {
       try {
          executeAsBatch(state, benchmarkState.MEDIUM);
@@ -49,7 +49,7 @@ public class MultiInsertStatementTest extends BaseBench {
    }
    
    @Benchmark
-   public void do51MultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
+   public void doLARGEMultirowInserts( ThreadState state, MultiRowBenchmarkState benchmarkState )
    {
       try {
          executeAsBatch(state, benchmarkState.LARGE);
@@ -171,7 +171,7 @@ public class MultiInsertStatementTest extends BaseBench {
    }
    
    /**
-    * Execute the sql batch with the multi row insert.
+    * Execute the sql in a batch with the multi row insert. In this situation there is only one statement in the batch.
     * @param state
     * @param sql enum for the batch size
     * @return the total number of rows inserted
