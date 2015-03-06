@@ -81,7 +81,7 @@ public class IndividualStatementsTest extends BaseBench {
       try 
       {
          ps = state.conn.prepareStatement(s);
-         for (long c = 1l; c < count; c += 1l){
+         for (long c = 0l; c < count; c += 1l){
             long id = initialId + c;
             ps.setLong(1, id);
             ps.setString(2, Long.toString(id));
