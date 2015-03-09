@@ -41,7 +41,7 @@
 
  **Batch/row count configuration**
 
- The SMALL, MEDIUM and LARGE size counts can be changed using "small.batch.size", "medium.batch.size" and "large.batch.size". The defaults are 1, 11, 51 respectively.
+ The SMALL, MEDIUM and LARGE size counts can be changed using "small.batch.size", "medium.batch.size" and "large.batch.size". The defaults are 5, 11, 51 respectively.
  
  **Concurrency**
  
