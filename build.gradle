@@ -1,3 +1,11 @@
+import org.apache.commons.lang3.StringUtils
+
+buildscript {
+	dependencies {
+		classpath 'org.apache.commons:commons-lang3:3.3.2'
+	}
+}
+
 plugins {
    id 'me.champeau.gradle.jmh' version '0.2.0'
 }
@@ -16,22 +24,57 @@ dependencies {
    jmh 'org.postgresql:postgresql:9.4-1201-jdbc41'
 }
 
+// return the replacement if it passes some conditions
+def lookup = { key -> 
+	def val = System.getProperty(key)
+	if (StringUtils.isNotBlank(val)) {
+	   logger.debug("Using $key to return found system property value $val")
+		return val
+	}
+	else { 
+		if (project.hasProperty(key)) {
+		   logger.debug("Using $key to return found gradle property value ${project.property(key)}")
+			return project.property(key)
+		}
+	}
+	return null
+}
+
+def propertyExists = { key ->
+	if ( null != lookup(key)) {
+		return true
+	} else {
+		return false
+	}
+}
+
+def appendIfExists = { key, builder -> 
+   if (propertyExists(key)) {
+   	builder.append( " -D$key=" )
+      builder.append( lookup(key) )
+   } else {
+   	logger.debug("Didn't find a property for the $key.")
+   }
+}
+
 jmh {
    jmhVersion = '1.6.1'
    fork=1
    threads=1
-   if (project.hasProperty('threads')) { threads=Integer.parseInt(property('threads')).intValue(); }
+   if (propertyExists('threads')) { threads=Integer.parseInt(lookup('threads')).intValue(); }
    jvmArgsAppend = " "
+   StringBuilder builder = new StringBuilder();
 //   jvmArgsAppend += "-Xrunjdwp:transport=dt_socket,address=burtha-f20:8000,server=y,suspend=y"
-   if (project.hasProperty('host')) { jvmArgsAppend += " -Dhost=${property('host')}"; }
-   if (project.hasProperty('port')) { jvmArgsAppend += " -Dport=${property('port')}"; }
-   if (project.hasProperty('database')) { jvmArgsAppend += " -Ddatabase=${property('database')}"; }
-   if (project.hasProperty('user')) { jvmArgsAppend += " -Duser=${property('user')}"; }
-   if (project.hasProperty('password')) { jvmArgsAppend += " -Dpassword=${property('password')}"; }
-   
-   if (project.hasProperty('maxPoolSize')) { jvmArgsAppend += " -DmaxPoolSize=${property('maxPoolSize')}"; }
-   
-   if (project.hasProperty('small.batch.size')) { jvmArgsAppend += " -Dsmall.batch.size=${property('small.batch.size')}"; }
-   if (project.hasProperty('medium.batch.size')) { jvmArgsAppend += " -Dmedium.batch.size=${property('medium.batch.size')}";}
-   if (project.hasProperty('large.batch.size')) { jvmArgsAppend += " -Dlarge.batch.size=${property('large.batch.size')}";}
+   appendIfExists ('host', builder)
+   appendIfExists ('port', builder)
+   appendIfExists ('database', builder)
+   appendIfExists ('user', builder)
+   appendIfExists ('password', builder)
+   appendIfExists ('maxPoolSize', builder)
+   appendIfExists ('small.batch.size', builder)
+   appendIfExists ('medium.batch.size', builder)
+   appendIfExists ('large.batch.size', builder)
+   jvmArgsAppend += builder.toString()
 }
+
+
