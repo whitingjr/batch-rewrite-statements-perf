@@ -3,6 +3,7 @@ package org.jboss.perf.pg;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -78,11 +79,28 @@ public class MultiInsertStatementTest extends BaseBench {
       final long count = sql.getCount();
       long initialId = iteration * sql.LARGE.getCount(); 
       int pos = 1;
+      final Timestamp now = new Timestamp(System.currentTimeMillis());
+      final String text = "multimultimultimulti";
       for (long c = 0l; c < count ; c += 1l  )
       {
-         ps.setLong(pos, initialId + c);
+         long id = initialId + c;
+         ps.setLong(pos, id);
          pos += 1;
-         ps.setString(pos, Long.toString(c));
+         ps.setLong(pos, id);
+         pos += 1;
+         ps.setString(pos, text);
+         pos += 1;
+         ps.setInt(pos, 1);
+         pos += 1;
+         ps.setFloat(pos, 5.5f);
+         pos += 1;
+         ps.setFloat(pos, 99.99f);
+         pos += 1;
+         ps.setInt(pos, 1);
+         pos += 1;
+         ps.setTimestamp(pos, now);
+         pos += 1;
+         ps.setInt(pos, 1);
          pos += 1;
       }
       return ps;
@@ -137,10 +155,10 @@ public class MultiInsertStatementTest extends BaseBench {
             throw new RuntimeException("Invalid count value." + sql.getCount());
          }
          StringBuilder builder = new StringBuilder();
-         builder.append("INSERT INTO orderline VALUES (?,?)");
+         builder.append("INSERT INTO orderline VALUES (?,?,?,?,?,?,?,?,?)");
          for (long c = 1l; c < sql.getCount()  ; c += 1l  )
          {
-            builder.append(",(?,?)");
+            builder.append(",(?,?,?,?,?,?,?,?,?)");
          }
          return builder.toString();
       }

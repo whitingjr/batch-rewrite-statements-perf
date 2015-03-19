@@ -2,6 +2,7 @@ package org.jboss.perf.pg;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -84,7 +85,14 @@ public class IndividualStatementsTest extends BaseBench {
          for (long c = 0l; c < count; c += 1l){
             long id = initialId + c;
             ps.setLong(1, id);
-            ps.setString(2, Long.toString(id));
+            ps.setLong(2, id);
+            ps.setString(3, this.getClass().getName().substring(0, 19));
+            ps.setInt(4, 1);
+            ps.setFloat(5, 5.5f);
+            ps.setFloat(6, 99.99f);
+            ps.setInt(7, 1);
+            ps.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+            ps.setInt(9, 1);
             ps.addBatch();
          }
          int uc[] = ps.executeBatch();
@@ -107,7 +115,7 @@ public class IndividualStatementsTest extends BaseBench {
    @State (Scope.Benchmark)
    public static class IndividualStatementsBenchmarkState extends BaseBenchmarkState
    {
-      private static final String SQL = "INSERT INTO orderline VALUES (?,?);";
+      private static final String SQL = "INSERT INTO orderline VALUES (?,?,?,?,?,?,?,?,?);";
       @Setup (Level.Trial)
       public void setUpSQL() 
       {

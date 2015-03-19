@@ -123,7 +123,8 @@ public class BaseBench {
             s.execute("DROP TABLE IF EXISTS orderline;");
             DbUtils.closeQuietly( s );
             s = c.createStatement();
-            s.execute("CREATE TABLE orderline ( orderLineId bigint NOT NULL, description VARCHAR (20), PRIMARY KEY (orderLineId) );");
+//            s.execute("CREATE TABLE orderline ( orderLineId bigint NOT NULL, description VARCHAR (20), PRIMARY KEY (orderLineId) );");
+            s.execute("CREATE TABLE orderline ( OL_ID bigint NOT NULL,OL_O_ID integer not null, ol_i_id char(20), OL_QTY integer, OL_TOTAL_VALUE numeric(12,2),OL_MSRP numeric(12,2),OL_STATUS integer, OL_SHIP_DATE timestamp,OL_VERSION integer default 0, PRIMARY KEY (OL_ID) );");
             c.commit();
          } catch ( SQLException sqle ) 
          {
